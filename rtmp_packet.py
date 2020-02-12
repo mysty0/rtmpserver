@@ -1,6 +1,8 @@
 from enum import Enum
 from abc import ABC, abstractmethod
 
+from utils import print_hex
+
 
 class PacketParseException(Exception):
     def __init__(self, reason):
@@ -71,7 +73,7 @@ class AMFCommandPacket(RTMPPacket):
 
     @staticmethod
     def parse_property(data):
-        length = data.pop_u32()
+        length = data.pop_u16()
         name = data.pop(length).decode('utf-8')
         val = AMFCommandPacket.parse_field(data)
         return name, val
@@ -93,6 +95,9 @@ class AMFCommandPacket(RTMPPacket):
             while not AMFCommandPacket.is_object_end(data):
                 name, val = AMFCommandPacket.parse_property(data)
                 field[name] = val
+
+            # delete object end
+            data.pop(3)
         elif ptype == 5:
             field = None
         elif ptype == 8:
