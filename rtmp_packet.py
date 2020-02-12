@@ -1,8 +1,6 @@
 from enum import Enum
 from abc import ABC, abstractmethod
 
-from utils import print_hex
-
 
 class PacketParseException(Exception):
     def __init__(self, reason):
@@ -80,7 +78,6 @@ class AMFCommandPacket(RTMPPacket):
 
     @staticmethod
     def parse_field(data):
-        #field = None
         ptype = data.pop_u8()
         if ptype == 0:
             field = data.pop_u64()
@@ -148,7 +145,5 @@ class RTMPPacketHeader:
 
     def __str__(self):
         return "type: {} stream id: {}, timestamp: {} packet length: {} message type: {} message stream id {} packet {}"\
-            .format(self.chunk_type, self.stream_id, self.timestamp_delta, self.packet_len, self.message_type, self.message_stream_id, self.packet)
-
-
-
+            .format(self.chunk_type, self.stream_id, self.timestamp_delta, self.packet_len, self.message_type,
+                    self.message_stream_id, self.packet)

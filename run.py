@@ -2,7 +2,6 @@ from server import RTMPServer
 
 
 def run():
-
     RTMPServer().run()
 
 
