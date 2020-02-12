@@ -40,5 +40,26 @@ class BytesPacket:
     def pop_u32_little(self):
         return struct.unpack("<I", self.pop(4))[0]
 
+    def pop_string(self):
+        length = self.pop_u16()
+        return self.pop(length).decode('utf-8')
+
     def pop_u64(self):
         return struct.unpack(">Q", self.pop(8))[0]
+
+    def push_u8(self, val):
+        self.bytes += struct.pack("!B", val)
+
+    def push_u16(self, val):
+        self.bytes += struct.pack("!H", val)
+
+    def push_u32(self, val):
+        self.bytes += struct.pack("!I", val)
+
+    def push_u64(self, val):
+        self.bytes += struct.pack("!Q", val)
+
+    def push_string(self, val):
+        length = len(val)
+        self.bytes += struct.pack("!H", length)
+        self.bytes += struct.pack("!{}s".format(length), val.encode('utf-8'))

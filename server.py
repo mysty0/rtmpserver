@@ -1,4 +1,3 @@
-import struct
 import asyncio
 
 from rtmp_protocol import Protocol

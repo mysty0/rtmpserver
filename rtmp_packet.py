@@ -12,41 +12,65 @@ class PacketParseException(Exception):
 
 class RTMPPacket(ABC):
     @abstractmethod
-    def __init__(self, data):
+    def read(self, data):
+        pass
+
+    @abstractmethod
+    def write(self, buffer):
         pass
 
 
 class SetChunkSizePacket(RTMPPacket):
-    def __init__(self, data):
+    def __init__(self):
+        self.size = 0
+
+    def read(self, data):
         super().__init__(data)
         self.size = data.pop_u32()
         if self.size >> 31:
             raise Exception("The most significant bit should be zero")
 
+    def write(self, buffer):
+        buffer.push_u32(self.size)
+
 
 class AbortPacket(RTMPPacket):
-    def __init__(self, data):
-        super().__init__(data)
+    def __init__(self):
+        self.stream_id = 0
+
+    def read(self, data):
         self.stream_id = data.pop_u32()
+
+    def write(self, buffer):
+        buffer.push_u32(self.stream_id)
 
 
 class AcknowledgementPacket(RTMPPacket):
-    def __init__(self, data):
-        super().__init__(data)
+    def __init__(self):
+        self.sequence_number = 0
+
+    def read(self, data):
         self.sequence_number = data.pop_u32()
+
+    def write(self, buffer):
+        buffer.push_u32(self.sequence_number)
 
 
 class SetServerBandwidth(RTMPPacket):
-    def __init__(self, data):
-        super().__init__(data)
+    def __init__(self):
+        self.bandwidth = 0
+
+    def read(self, data):
         self.bandwidth = data.pop_u32()
+
+    def write(self, buffer):
+        buffer.push_u32(self.bandwidth)
 
 
 class SetClientBandwidth (RTMPPacket):
-    def __init__(self, data):
-        super().__init__(data)
-        self.bandwidth = data.pop_u32()
-        self.limit_type = data.pop_u8()
+    def __init__(self):
+        self.bandwidth = 0
+        self.limit_type = 0
         """
         0 - Hard: The peer SHOULD limit its output bandwidth to the
         indicated window size.
@@ -57,17 +81,33 @@ class SetClientBandwidth (RTMPPacket):
         as though it was marked Hard, otherwise ignore this message.
         """
 
+    def read(self, data):
+        self.bandwidth = data.pop_u32()
+        self.limit_type = data.pop_u8()
+
+    def write(self, buffer):
+        buffer.push_u32(self.bandwidth)
+        buffer.push_u8(self.limit_type)
+
 
 class AMFCommandPacket(RTMPPacket):
+    def __init__(self):
+        self.fields = []
+
+    def read(self, data):
+        while not data.is_empty():
+            self.fields.append(self.parse_field(data))
+
+    def write(self, buffer):
+        pass
+
+    @staticmethod
+    def write_field(buffer):
+        print("")
+
     @staticmethod
     def is_object_end(data):
         return data.get(0) == 0 and data.get(1) == 0 and data.get(2) == 9
-
-    def __init__(self, data):
-        super().__init__(data)
-        self.fields = []
-        while not data.is_empty():
-            self.fields.append(self.parse_field(data))
 
     @staticmethod
     def parse_property(data):
@@ -92,7 +132,6 @@ class AMFCommandPacket(RTMPPacket):
             while not AMFCommandPacket.is_object_end(data):
                 name, val = AMFCommandPacket.parse_property(data)
                 field[name] = val
-
             # delete object end
             data.pop(3)
         elif ptype == 5:
@@ -139,7 +178,8 @@ class RTMPPacketHeader:
             self.message_stream_id = data.pop_u32_little()
 
         if self.message_type in self.packet_type_mapping:
-            self.packet = self.packet_type_mapping[self.message_type](data.pop_packet(self.packet_len))
+            self.packet = self.packet_type_mapping[self.message_type]()
+            self.packet.read(data.pop_packet(self.packet_len))
         else:
             raise PacketParseException("Packet id not implemented")
 
