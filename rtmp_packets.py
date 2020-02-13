@@ -90,8 +90,11 @@ class SetClientBandwidth (RTMPPacket):
 
 
 class AMFCommandPacket(RTMPPacket):
-    def __init__(self):
-        self.fields = []
+    def __init__(self, fields=None):
+        if fields is None:
+            fields = []
+
+        self.fields = fields
 
     def read(self, data):
         while not data.is_empty():
@@ -121,7 +124,6 @@ class AMFCommandPacket(RTMPPacket):
             buffer.push_u8(3)
             for name, val in enumerate(field):
                 AMFCommandPacket.write_property(buffer, name, field)
-
             # write object end
             buffer.push_u8(0)
             buffer.push_u8(0)

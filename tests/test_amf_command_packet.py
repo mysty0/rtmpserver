@@ -36,3 +36,11 @@ def test_object_parse():
     pack = AMFCommandPacket()
     pack.read(BytesPacket(data))
     assert "test" in pack.fields[0] and pack.fields[0]["test"] == "test"
+
+
+def test_int_write():
+    pack = AMFCommandPacket([12])
+    buf = BytesPacket(bytearray())
+    pack.write(buf)
+    tp, num = buf.pop_u8(), buf.pop_u64()
+    assert tp == 0 and num == 12

@@ -14,18 +14,24 @@ class RTMPPacketHeader:
         0x14: AMFCommandPacket
     }
 
-    def __init__(self, timestamp_delta=None, packet_len=None, packet=None, chunk_type=None, stream_id=None,
-                 message_type=None, message_stream_id=None):
+    @staticmethod
+    def get_packet_id(packet):
+        for id, pack in RTMPPacketHeader.packet_type_mapping.items():
+            if isinstance(packet, pack):
+                return id
+        raise PacketParseException("Packet {} is not implemented".format(packet))
+
+    def __init__(self, timestamp_delta=None, packet=None, chunk_type=None, stream_id=None, message_stream_id=None):
         self.timestamp_delta = timestamp_delta
-        self.packet_len = packet_len
+        self.packet_len = 0
         self.packet = packet
         self.chunk_type = chunk_type
         self.stream_id = stream_id
-        self.message_type = message_type
+        self.message_type = 0
         self.message_stream_id = message_stream_id
 
     def write(self, buffer):
-        first_byte = self.chunk_type & self.TYPE_MASK + self.stream_id & ~self.TYPE_MASK
+        first_byte = (self.chunk_type & self.TYPE_MASK) +(self.stream_id & ~self.TYPE_MASK)
         buffer.push_u8(first_byte)
 
         packet_buf = BytesPacket(bytearray())
@@ -35,7 +41,7 @@ class RTMPPacketHeader:
         if self.chunk_type < 2:
             self.packet.write(packet_buf)
             buffer.push_u28(len(packet_buf))
-            buffer.push_u8(self.message_type)
+            buffer.push_u8(self.get_packet_id(self.packet))
         if self.chunk_type < 1:
             buffer.push_u32_little(self.message_stream_id)
 

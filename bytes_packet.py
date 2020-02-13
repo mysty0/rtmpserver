@@ -60,7 +60,7 @@ class BytesPacket:
         self.bytes += struct.pack("!I", val)
 
     def push_u32_little(self, val):
-        self.bytes += struct.pack(">I", val)
+        self.bytes += struct.pack("<I", val)
 
     def push_u64(self, val):
         self.bytes += struct.pack("!Q", val)
