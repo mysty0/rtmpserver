@@ -1,7 +1,7 @@
 import struct
 
 from bytes_packet import BytesPacket
-from rtmp_packet import AMFCommandPacket
+from rtmp_packets import AMFCommandPacket
 from utils import print_hex
 
 

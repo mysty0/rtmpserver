@@ -1,7 +1,7 @@
 import asyncio
 
 from bytes_packet import BytesPacket
-from rtmp_packet import RTMPPacketHeader
+from rtmp_packet_header import RTMPPacketHeader
 from utils import *
 
 
@@ -36,7 +36,8 @@ class Protocol(asyncio.Protocol):
 
     @staticmethod
     def parse_packet(data):
-        pack = RTMPPacketHeader(data)
+        pack = RTMPPacketHeader()
+        pack.read(data)
         print(pack)
 
     @staticmethod

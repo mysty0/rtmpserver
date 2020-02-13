@@ -48,6 +48,13 @@ def test_write_u16():
     assert pack.pop_u16() == 23
 
 
+def test_write_u28():
+    pack = BytesPacket(bytearray())
+    pack.push_u28(23)
+    assert len(pack) == 3
+    assert pack.pop_u28() == 23
+
+
 def test_write_u32():
     pack = BytesPacket(bytearray())
     pack.push_u32(23)

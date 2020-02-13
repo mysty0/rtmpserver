@@ -53,8 +53,14 @@ class BytesPacket:
     def push_u16(self, val):
         self.bytes += struct.pack("!H", val)
 
+    def push_u28(self, val):
+        self.bytes += struct.pack("!BH", val >> 16, val & 0xFFFF)
+
     def push_u32(self, val):
         self.bytes += struct.pack("!I", val)
+
+    def push_u32_little(self, val):
+        self.bytes += struct.pack(">I", val)
 
     def push_u64(self, val):
         self.bytes += struct.pack("!Q", val)
@@ -63,3 +69,6 @@ class BytesPacket:
         length = len(val)
         self.bytes += struct.pack("!H", length)
         self.bytes += struct.pack("!{}s".format(length), val.encode('utf-8'))
+
+    def push_buffer(self, val):
+        self.bytes += val.bytes

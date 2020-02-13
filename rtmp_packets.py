@@ -25,7 +25,6 @@ class SetChunkSizePacket(RTMPPacket):
         self.size = 0
 
     def read(self, data):
-        super().__init__(data)
         self.size = data.pop_u32()
         if self.size >> 31:
             raise Exception("The most significant bit should be zero")
@@ -99,11 +98,43 @@ class AMFCommandPacket(RTMPPacket):
             self.fields.append(self.parse_field(data))
 
     def write(self, buffer):
-        pass
+        for field in self.fields:
+            self.write_field(buffer, field)
 
     @staticmethod
-    def write_field(buffer):
-        print("")
+    def write_property(buffer, name, val):
+        buffer.push_string(name)
+        AMFCommandPacket.write_field(buffer, val)
+
+    @staticmethod
+    def write_field(buffer, field):
+        if isinstance(field, int):
+            buffer.push_u8(0)
+            buffer.push_u64(field)
+        elif isinstance(field, bool):
+            buffer.push_u8(1)
+            buffer.push_u8(0 if not field else 1)
+        elif isinstance(field, str):
+            buffer.push_u8(2)
+            buffer.push_string(field)
+        elif isinstance(field, dict):
+            buffer.push_u8(3)
+            for name, val in enumerate(field):
+                AMFCommandPacket.write_property(buffer, name, field)
+
+            # write object end
+            buffer.push_u8(0)
+            buffer.push_u8(0)
+            buffer.push_u8(9)
+        elif field is None:
+            buffer.push_u8(5)
+        elif isinstance(field, list):
+            buffer.push_u8(8)
+            buffer.push_u32(len(field))
+            for item in field:
+                AMFCommandPacket.write_property(buffer, item[0], item[1])
+        else:
+            raise PacketParseException("Packet field type {} not implemented".format(type(field)))
 
     @staticmethod
     def is_object_end(data):
@@ -141,7 +172,7 @@ class AMFCommandPacket(RTMPPacket):
             field = []
             for _ in range(length):
                 name, val = AMFCommandPacket.parse_property(data)
-                field[name] = val
+                field.append((name, val))
         else:
             raise PacketParseException("Packet field type not implemented")
 
@@ -149,41 +180,3 @@ class AMFCommandPacket(RTMPPacket):
 
     def __str__(self):
         return "fields: {}".format(self.fields)
-
-
-class RTMPPacketHeader:
-    packet_type_mapping = {
-        0x1: SetChunkSizePacket,
-        0x2: AbortPacket,
-        0x3: AcknowledgementPacket,
-        0x5: SetServerBandwidth,
-        0x6: SetClientBandwidth,
-        0x14: AMFCommandPacket
-    }
-
-    def __init__(self, data):
-        self.timestamp_delta = None
-        self.packet_len = None
-        self.message_id = None
-        self.packet = None
-
-        self.chunk_type = data[0] & 0b11000000
-        self.stream_id = data.pop()[0] & 0b00111111
-        if self.chunk_type < 3:
-            self.timestamp_delta = data.pop_u28()
-        if self.chunk_type < 2:
-            self.packet_len = data.pop_u28()
-            self.message_type = data.pop_u8()
-        if self.chunk_type < 1:
-            self.message_stream_id = data.pop_u32_little()
-
-        if self.message_type in self.packet_type_mapping:
-            self.packet = self.packet_type_mapping[self.message_type]()
-            self.packet.read(data.pop_packet(self.packet_len))
-        else:
-            raise PacketParseException("Packet id not implemented")
-
-    def __str__(self):
-        return "type: {} stream id: {}, timestamp: {} packet length: {} message type: {} message stream id {} packet {}"\
-            .format(self.chunk_type, self.stream_id, self.timestamp_delta, self.packet_len, self.message_type,
-                    self.message_stream_id, self.packet)
