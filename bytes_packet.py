@@ -68,7 +68,7 @@ class BytesPacket:
     def push_string(self, val):
         length = len(val)
         self.bytes += struct.pack("!H", length)
-        self.bytes += struct.pack("!{}s".format(length), val.encode('utf-8'))
+        self.bytes += struct.pack("!{}s".format(length), val.encode('utf-8', "ignore"))
 
     def push_buffer(self, val):
         self.bytes += val.bytes

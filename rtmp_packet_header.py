@@ -9,7 +9,7 @@ class RTMPPacketHeader:
         0x1: SetChunkSizePacket,
         0x2: AbortPacket,
         0x3: AcknowledgementPacket,
-        0x5: SetServerBandwidth,
+        0x5: SetWindowAcknowledgementSize,
         0x6: SetClientBandwidth,
         0x14: AMFCommandPacket
     }
@@ -21,7 +21,7 @@ class RTMPPacketHeader:
                 return id
         raise PacketParseException("Packet {} is not implemented".format(packet))
 
-    def __init__(self, timestamp_delta=None, packet=None, chunk_type=None, stream_id=None, message_stream_id=None):
+    def __init__(self, chunk_type=0, stream_id=None, timestamp_delta=None, message_stream_id=0, packet=None):
         self.timestamp_delta = timestamp_delta
         self.packet_len = 0
         self.packet = packet
@@ -48,7 +48,7 @@ class RTMPPacketHeader:
         buffer.push_buffer(packet_buf)
 
     def read(self, data):
-        self.chunk_type = data[0] & self.TYPE_MASK
+        self.chunk_type = (data[0] & self.TYPE_MASK) >> 6
         self.stream_id = data.pop()[0] & ~self.TYPE_MASK
         if self.chunk_type < 3:
             self.timestamp_delta = data.pop_u28()
@@ -62,7 +62,8 @@ class RTMPPacketHeader:
             self.packet = self.packet_type_mapping[self.message_type]()
             self.packet.read(data.pop_packet(self.packet_len))
         else:
-            raise PacketParseException("Packet id not implemented")
+            raise PacketParseException("Packet id [{}] not implemented, received packet <{}>"
+                                       .format(self.message_type, self))
 
     def __str__(self):
         return "type: {} stream id: {}, timestamp: {} packet length: {} message type: {} message stream id {} packet {}"\

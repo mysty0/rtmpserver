@@ -1,6 +1,6 @@
 import asyncio
 
-from rtmp_protocol import Protocol
+from rtmp_protocol import RTMPProtocol
 
 
 class RTMPServer:
@@ -12,7 +12,7 @@ class RTMPServer:
         HOST, PORT = "localhost", 1935
 
         loop = asyncio.get_running_loop()
-        server = await loop.create_server(Protocol, HOST, PORT)
+        server = await loop.create_server(RTMPProtocol, HOST, PORT)
         print('Serving on {}'.format(server.sockets[0].getsockname()))
         await server.serve_forever()
 

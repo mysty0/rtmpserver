@@ -38,6 +38,15 @@ def test_object_parse():
     assert "test" in pack.fields[0] and pack.fields[0]["test"] == "test"
 
 
+def test_object_parse_long():
+    data = struct.pack('!bh4sbh4s', 3, 4, 'test'.encode('UTF-8'), 2, 4, 'test'.encode('UTF-8'))
+    data += struct.pack('!h4sbh4s', 4, 'tset'.encode('UTF-8'), 2, 4, 'tset'.encode('UTF-8'))
+    data += struct.pack('!bbb', 0, 0, 9)
+    pack = AMFCommandPacket()
+    pack.read(BytesPacket(data))
+    assert "test" in pack.fields[0] and pack.fields[0]["test"] == "test" and pack.fields[0]["tset"] == "tset"
+
+
 def test_int_write():
     pack = AMFCommandPacket([12])
     buf = BytesPacket(bytearray())

@@ -21,8 +21,8 @@ class RTMPPacket(ABC):
 
 
 class SetChunkSizePacket(RTMPPacket):
-    def __init__(self):
-        self.size = 0
+    def __init__(self, size=0):
+        self.size = size
 
     def read(self, data):
         self.size = data.pop_u32()
@@ -55,21 +55,21 @@ class AcknowledgementPacket(RTMPPacket):
         buffer.push_u32(self.sequence_number)
 
 
-class SetServerBandwidth(RTMPPacket):
-    def __init__(self):
-        self.bandwidth = 0
+class SetWindowAcknowledgementSize(RTMPPacket):
+    def __init__(self, acknowledgement_size=0):
+        self.acknowledgement_size = acknowledgement_size
 
     def read(self, data):
-        self.bandwidth = data.pop_u32()
+        self.acknowledgement_size = data.pop_u32()
 
     def write(self, buffer):
-        buffer.push_u32(self.bandwidth)
+        buffer.push_u32(self.acknowledgement_size)
 
 
 class SetClientBandwidth (RTMPPacket):
-    def __init__(self):
-        self.bandwidth = 0
-        self.limit_type = 0
+    def __init__(self, bandwidth=0, limit_type=0):
+        self.bandwidth = bandwidth
+        self.limit_type = limit_type
         """
         0 - Hard: The peer SHOULD limit its output bandwidth to the
         indicated window size.
@@ -95,6 +95,9 @@ class AMFCommandPacket(RTMPPacket):
             fields = []
 
         self.fields = fields
+
+    def __getitem__(self, key):
+        return self.fields[key]
 
     def read(self, data):
         while not data.is_empty():
@@ -122,8 +125,9 @@ class AMFCommandPacket(RTMPPacket):
             buffer.push_string(field)
         elif isinstance(field, dict):
             buffer.push_u8(3)
-            for name, val in enumerate(field):
-                AMFCommandPacket.write_property(buffer, name, field)
+            for name, val in field.items():
+                print(name, val)
+                AMFCommandPacket.write_property(buffer, name, val)
             # write object end
             buffer.push_u8(0)
             buffer.push_u8(0)
@@ -144,8 +148,7 @@ class AMFCommandPacket(RTMPPacket):
 
     @staticmethod
     def parse_property(data):
-        length = data.pop_u16()
-        name = data.pop(length).decode('utf-8')
+        name = data.pop_string()
         val = AMFCommandPacket.parse_field(data)
         return name, val
 
@@ -157,9 +160,7 @@ class AMFCommandPacket(RTMPPacket):
         elif ptype == 1:
             field = False if data.pop_u8() == 0 else True
         elif ptype == 2:
-            length = data.pop_u16()
-            string = data.pop(length).decode('utf-8')
-            field = string
+            field = data.pop_string()
         elif ptype == 3:
             field = {}
             while not AMFCommandPacket.is_object_end(data):
