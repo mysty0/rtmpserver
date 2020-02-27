@@ -154,32 +154,39 @@ class AMFCommandPacket(RTMPPacket):
 
     @staticmethod
     def parse_field(data):
+        print(data.pointer)
         ptype = data.pop_u8()
-        if ptype == 0:
+        if ptype == 0x00:
             field = data.pop_u64()
-        elif ptype == 1:
+        elif ptype == 0x01:
             field = False if data.pop_u8() == 0 else True
-        elif ptype == 2:
+        elif ptype == 0x02:
             field = data.pop_string()
-        elif ptype == 3:
+        elif ptype == 0x03:
             field = {}
             while not AMFCommandPacket.is_object_end(data):
                 name, val = AMFCommandPacket.parse_property(data)
                 field[name] = val
             # delete object end
             data.pop(3)
-        elif ptype == 5:
+        elif ptype == 0x05:
             field = None
-        elif ptype == 8:
+        elif ptype == 0x08:
             length = data.pop_u32()
             field = []
             for _ in range(length):
                 name, val = AMFCommandPacket.parse_property(data)
                 field.append((name, val))
+        elif ptype == 0x0C:
+            field = data.pop_long_string()
         else:
-            raise PacketParseException("Packet field type not implemented")
+            raise PacketParseException("Packet field type <{}> not implemented".format(ptype))
 
         return field
 
     def __str__(self):
         return "fields: {}".format(self.fields)
+
+
+class MetaDataPacket(AMFCommandPacket):
+    pass

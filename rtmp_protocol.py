@@ -34,7 +34,7 @@ class RTMPProtocol(asyncio.Protocol):
         else:
             bpack = BytesPacket(data)
             if self.state == ConnectionState.HANDSHAKE_INIT:
-                bpack.pop(1536)
+                bpack.pop(self.PING_SIZE)
                 self.state = ConnectionState.HANDSHAKE_FINISHED
             if bpack.is_empty():
                 return

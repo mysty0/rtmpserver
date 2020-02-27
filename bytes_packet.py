@@ -1,5 +1,7 @@
 import struct
 
+from utils import print_hex
+
 
 class BytesPacket:
     def __init__(self, bytes):
@@ -19,6 +21,8 @@ class BytesPacket:
         return len(self.bytes) == self.pointer
 
     def pop(self, len=1):
+        print("popping bytes")
+        print(len, self.pointer, self.__len__())
         self.pointer += len
         return bytearray([self.bytes[i] for i in range(self.pointer-len, self.pointer)])
 
@@ -42,6 +46,10 @@ class BytesPacket:
 
     def pop_string(self):
         length = self.pop_u16()
+        return self.pop(length).decode('utf-8')
+
+    def pop_long_string(self):
+        length = self.pop_u32()
         return self.pop(length).decode('utf-8')
 
     def pop_u64(self):
