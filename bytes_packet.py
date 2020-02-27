@@ -24,8 +24,7 @@ class BytesPacket:
         return len(self.bytes) == self.pointer
 
     def pop(self, len=1):
-        print("popping bytes")
-        print(len, self.pointer, self.__len__())
+        print("popping bytes len {}, point {} rem len {}".format(len, self.pointer, self.__len__()))
         self.pointer += len
         return bytearray([self.bytes[i] for i in range(self.pointer-len, self.pointer)])
 
@@ -58,6 +57,9 @@ class BytesPacket:
     def pop_u64(self):
         return struct.unpack(">Q", self.pop(8))[0]
 
+    def pop_double(self):
+        return struct.unpack(">d", self.pop(8))[0]
+
     def push_u8(self, val):
         self.bytes += struct.pack("!B", val)
 
@@ -75,6 +77,9 @@ class BytesPacket:
 
     def push_u64(self, val):
         self.bytes += struct.pack("!Q", val)
+
+    def push_double(self, val):
+        self.bytes += struct.pack("!d", val)
 
     def push_string(self, val):
         length = len(val)

@@ -114,9 +114,9 @@ class AMFCommandPacket(RTMPPacket):
 
     @staticmethod
     def write_field(buffer, field):
-        if isinstance(field, int):
+        if isinstance(field, float) or isinstance(field, int):
             buffer.push_u8(0)
-            buffer.push_u64(field)
+            buffer.push_double(field)
         elif isinstance(field, bool):
             buffer.push_u8(1)
             buffer.push_u8(0 if not field else 1)
@@ -139,6 +139,10 @@ class AMFCommandPacket(RTMPPacket):
             buffer.push_u32(len(field))
             for item in field:
                 AMFCommandPacket.write_property(buffer, item[0], item[1])
+            # write object end
+            buffer.push_u8(0)
+            buffer.push_u8(0)
+            buffer.push_u8(9)
         else:
             raise PacketParseException("Packet field type {} not implemented".format(type(field)))
 
@@ -156,8 +160,9 @@ class AMFCommandPacket(RTMPPacket):
     def parse_field(data):
         print(data.pointer)
         ptype = data.pop_u8()
+        print(ptype)
         if ptype == 0x00:
-            field = data.pop_u64()
+            field = data.pop_double()
         elif ptype == 0x01:
             field = False if data.pop_u8() == 0 else True
         elif ptype == 0x02:
@@ -177,11 +182,13 @@ class AMFCommandPacket(RTMPPacket):
             for _ in range(length):
                 name, val = AMFCommandPacket.parse_property(data)
                 field.append((name, val))
+            # delete object end
+            data.pop(3)
         elif ptype == 0x0C:
             field = data.pop_long_string()
         else:
             raise PacketParseException("Packet field type <{}> not implemented".format(ptype))
-
+        print(field)
         return field
 
     def __str__(self):
