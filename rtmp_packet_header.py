@@ -55,6 +55,8 @@ class RTMPPacketHeader:
             self.timestamp_delta = data.pop_u28()
         if self.chunk_type < 2:
             self.packet_len = data.pop_u28()
+            if self.packet_len > len(data):
+                return False
             self.message_type = data.pop_u8()
         if self.chunk_type < 1:
             self.message_stream_id = data.pop_u32_little()
@@ -70,6 +72,8 @@ class RTMPPacketHeader:
         else:
             raise PacketParseException("Packet id [{}] not implemented, received packet <{}>"
                                        .format(self.message_type, self))
+
+        return True
 
     def __str__(self):
         return "type: {}; stream id: {}; timestamp: {}; packet length: {}; message type: {}; " \

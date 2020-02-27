@@ -12,7 +12,10 @@ class BytesPacket:
         return self.bytes[key]
 
     def __len__(self):
-        return len(self.bytes)
+        return len(self.bytes)-self.pointer
+
+    def __add__(self, other):
+        return BytesPacket(self.bytes + other.bytes)
 
     def get(self, index):
         return self.bytes[self.pointer+index]

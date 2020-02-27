@@ -20,6 +20,7 @@ class RTMPProtocol(asyncio.Protocol):
     def __init__(self):
         self.state = ConnectionState.NOT_CONNECTED
         self.transport = None
+        self.unfinished_packet = None
 
     def connection_made(self, transport):
         self.transport = transport
@@ -41,12 +42,21 @@ class RTMPProtocol(asyncio.Protocol):
 
             print_hex(data)
             while not bpack.is_empty():
-                pack = self.parse_packet(bpack)
+                if self.unfinished_packet:
+                    pack = self.parse_packet(self.unfinished_packet + bpack)
+                else:
+                    pack = self.parse_packet(bpack)
+                if not pack:
+                    self.unfinished_packet = bpack
+                    break
                 self.process_packet(pack)
 
     def process_packet(self, header):
         packet = header.packet
         if self.state == ConnectionState.HANDSHAKE_FINISHED:
+            if isinstance(packet, SetChunkSizePacket):
+                print("client set chunk size {}".format(packet.size))
+                return
             self.send_packet(header, SetWindowAcknowledgementSize(5000000))
             self.send_packet(header, SetClientBandwidth(5000000, 2))
             self.send_packet(header, SetChunkSizePacket(60000))
@@ -66,9 +76,11 @@ class RTMPProtocol(asyncio.Protocol):
     @staticmethod
     def parse_packet(data):
         pack = RTMPPacketHeader()
-        pack.read(data)
-        print("Receive packet {}".format(pack))
-        return pack
+        if pack.read(data):
+            print("Receive packet {}".format(pack))
+            return pack
+        else:
+            return False
 
     @staticmethod
     def handshake_response(data):
