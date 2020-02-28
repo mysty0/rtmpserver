@@ -158,9 +158,7 @@ class AMFCommandPacket(RTMPPacket):
 
     @staticmethod
     def parse_field(data):
-        print(data.pointer)
         ptype = data.pop_u8()
-        print(ptype)
         if ptype == 0x00:
             field = data.pop_double()
         elif ptype == 0x01:
@@ -188,7 +186,6 @@ class AMFCommandPacket(RTMPPacket):
             field = data.pop_long_string()
         else:
             raise PacketParseException("Packet field type <{}> not implemented".format(ptype))
-        print(field)
         return field
 
     def __str__(self):

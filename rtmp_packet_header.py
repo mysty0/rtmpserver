@@ -51,13 +51,10 @@ class RTMPPacketHeader:
         buffer.push_buffer(packet_buf)
 
     def clean_markers(self, data, id, offset):
-        print(len(data.bytes)//self.PACKET_SIZE)
         for i in range(0, len(data.bytes)//self.PACKET_SIZE+1):
             ind = self.PACKET_SIZE*i+offset
             # if 128's byte is marker then delete it
-            print("trying to delete", data[ind], i, offset, ind)
             if data[ind] == 0xC0 | id:
-                print("del suc")
                 del data.bytes[ind]
                 offset -= 1
 
@@ -77,12 +74,9 @@ class RTMPPacketHeader:
         if self.message_type in self.packet_type_mapping:
             self.packet = self.packet_type_mapping[self.message_type]()
             self.clean_markers(data, self.stream_id, 12)
+
             print_hex(data)
-            print(self)
-            print(len(data))
-            print(data.pointer)
-            print(self.packet_len)
-            print("POP")
+
             self.packet.read(data.pop_packet(self.packet_len))
         else:
             raise PacketParseException("Packet id [{}] not implemented, received packet <{}>"

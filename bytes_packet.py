@@ -24,7 +24,6 @@ class BytesPacket:
         return len(self.bytes) == self.pointer
 
     def pop(self, len=1):
-        print("popping bytes len {}, point {} rem len {}".format(len, self.pointer, self.__len__()))
         self.pointer += len
         return bytearray([self.bytes[i] for i in range(self.pointer-len, self.pointer)])
 
