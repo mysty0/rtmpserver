@@ -1,9 +1,11 @@
 from bytes_packet import BytesPacket
 from rtmp_packets import *
+from utils import print_hex
 
 
 class RTMPPacketHeader:
     TYPE_MASK = 0b11000000
+    PACKET_SIZE = 128
 
     packet_type_mapping = {
         0x1: SetChunkSizePacket,
@@ -48,6 +50,17 @@ class RTMPPacketHeader:
 
         buffer.push_buffer(packet_buf)
 
+    def clean_markers(self, data, id, offset):
+        print(len(data.bytes)//self.PACKET_SIZE)
+        for i in range(0, len(data.bytes)//self.PACKET_SIZE+1):
+            ind = self.PACKET_SIZE*i+offset
+            # if 128's byte is marker then delete it
+            print("trying to delete", data[ind], i, offset, ind)
+            if data[ind] == 0xC0 | id:
+                print("del suc")
+                del data.bytes[ind]
+                offset -= 1
+
     def read(self, data):
         self.chunk_type = (data[0] & self.TYPE_MASK) >> 6
         self.stream_id = data.pop()[0] & ~self.TYPE_MASK
@@ -63,6 +76,8 @@ class RTMPPacketHeader:
 
         if self.message_type in self.packet_type_mapping:
             self.packet = self.packet_type_mapping[self.message_type]()
+            self.clean_markers(data, self.stream_id, 12)
+            print_hex(data)
             print(self)
             print(len(data))
             print(data.pointer)

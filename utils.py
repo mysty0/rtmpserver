@@ -17,6 +17,6 @@ def clean_char(string):
 def print_hex(data):
     n = 16
     chunks = [data[i:i + n] for i in range(0, len(data), n)]
-    strs = [data_to_str(chunks[i], hex(i*n))+" | "+clean_char((''.join(chunks[i].decode('utf-8', 'replace'))).replace(u'\ufffd', '.')) for i in range(len(chunks))]
+    strs = [data_to_str(chunks[i], num_to_hex(i*n))+" | "+clean_char((''.join(chunks[i].decode('utf-8', 'replace'))).replace(u'\ufffd', '.')) for i in range(len(chunks))]
     strs = [insert_in_pos(string, 31, ' ') for string in strs]
     [print(string) for string in strs]

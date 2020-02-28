@@ -28,6 +28,7 @@ class RTMPProtocol(asyncio.Protocol):
 
     def data_received(self, data):
         #ip = transport.get_extra_info('peername')
+        data = bytearray(data)
         if self.state == ConnectionState.NOT_CONNECTED:
             self.transport.write(RTMPProtocol.handshake_response(data))
             self.state = ConnectionState.HANDSHAKE_INIT
@@ -42,10 +43,14 @@ class RTMPProtocol(asyncio.Protocol):
 
             print_hex(data)
             while not bpack.is_empty():
+                # If tcp split packet packet trying to merge it
                 if self.unfinished_packet:
+                    # Deleting packet marker
+                    del bpack.bytes[0]
                     pack = self.parse_packet(self.unfinished_packet + bpack)
                 else:
                     pack = self.parse_packet(bpack)
+                # If packet is splited remember it for further merging
                 if not pack:
                     self.unfinished_packet = bpack
                     break
